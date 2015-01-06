@@ -43,3 +43,25 @@ function _fuzion_validate_clean_git() {
     drush_log(implode("\n", $output), 'warning');
   }
 }
+
+/**
+ * Implements hook_drush_command().
+ */
+function fuzion_drush_command() {
+  $items['fz-install-archimedes'] = array(
+    'description' => 'Install Archimedes on a site.',
+    'aliases' => array('arch-install'),
+  );
+  return $items;
+}
+
+/**
+ *
+ */
+function drush_fuzion_fz_install_archimedes() {
+  $makefile = dirname(__FILE__) . '/makefiles/archimedes-' . reset(explode('.', VERSION)) . '.make';
+  $command = 'drush -y make --no-core ' . $makefile;
+  if (!drush_shell_exec($command)) {
+    return drush_set_error('DRUSH_FUZION_ARCHIMEDES_INSTALL_PROBLEM', dt('Unable to install Archimedes via !command.', array('!command' => $command)));
+  }
+}
