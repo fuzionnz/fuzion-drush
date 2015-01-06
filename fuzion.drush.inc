@@ -56,7 +56,8 @@ function fuzion_drush_command() {
 }
 
 /**
- *
+ * Work around lack of Archimedes package on d.o and install it via
+ * makefile.
  */
 function drush_fuzion_fz_install_archimedes() {
   $makefile = dirname(__FILE__) . '/makefiles/archimedes-' . reset(explode('.', VERSION)) . '.make';
