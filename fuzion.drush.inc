@@ -85,6 +85,14 @@ function drush_fuzion_fz_install_archimedes() {
     }
     return drush_set_error('DRUSH_FUZION_ARCHIMEDES_INSTALL_PROBLEM', dt('Unable to install Archimedes via !command.', array('!command' => $command)));
   }
+  $command = 'drush ' . $verbose . ' -y en archimedes_extras';
+  if (!drush_shell_exec($command)) {
+    if (drush_get_context('DRUSH_VERBOSE')) {
+      drush_log('Output of ' . $command . ':', 'error');
+      drush_log(implode("\n", drush_shell_exec_output()), 'warning');
+    }
+    return drush_set_error('DRUSH_FUZION_ARCHIMEDES_ENABLE_PROBLEM', dt('Unable to enable Archimedes via !command.', array('!command' => $command)));
+  }
 }
 
 /**
