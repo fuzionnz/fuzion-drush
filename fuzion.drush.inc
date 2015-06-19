@@ -76,8 +76,13 @@ function drush_fuzion_fz_install_archimedes() {
   $version_parts = explode('.', VERSION);
   $version_major = reset($version_parts);
   $makefile = dirname(__FILE__) . '/makefiles/archimedes-' . $version_major . '.make';
-  $command = 'drush -v -y make --no-core ' . $makefile;
+  $verbose = drush_get_context('DRUSH_VERBOSE') ? '-v' : '';
+  $command = 'drush ' . $verbose . ' -y make --no-core ' . $makefile;
   if (!drush_shell_exec($command)) {
+    if (drush_get_context('DRUSH_VERBOSE')) {
+      drush_log('Output of ' . $command . ':', 'error');
+      drush_log(implode("\n", drush_shell_exec_output()), 'warning');
+    }
     return drush_set_error('DRUSH_FUZION_ARCHIMEDES_INSTALL_PROBLEM', dt('Unable to install Archimedes via !command.', array('!command' => $command)));
   }
 }
