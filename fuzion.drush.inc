@@ -216,6 +216,7 @@ function drush_fuzion_fz_civicrm_upgrade() {
   $filename = str_replace('?', '_', basename($tarball_url));
   $tmp_path = drush_tempdir() . '/' . $filename;
   $download_path = drush_download_file($tarball_url, $tmp_path, $cache_duration);
+
   if ($download_path || drush_get_context('DRUSH_SIMULATE')) {
     drush_log(dt('Downloading !filename was successful.', array('!filename' => $filename)));
   }
@@ -246,7 +247,7 @@ function drush_fuzion_fz_civicrm_upgrade() {
   }
 
   // Detect which flavour of tar is installed: GNU or BSD.
-  $command = 'tar --version | grep -q gnu';
+  $command = 'tar --version | grep -iq gnu';
   if (drush_shell_exec($command)) {
     $tar_args = '--no-overwrite-dir';
   }
@@ -259,7 +260,8 @@ function drush_fuzion_fz_civicrm_upgrade() {
     '@filename' => $download_path,
     '@tar_args' => $tar_args,
   );
-  $command = dt('tar -xf @filename @tar_args -s "#^civicrm#sites/all/modules/civicrm#g"', $params);
+
+  $command = dt('tar -xf @filename @tar_args -C sites/all/modules', $params);
   if (!drush_shell_exec($command)) {
     $message[] = dt('Unable to extract tarball at @filename', array('@filename' => $download_path));
     $message[] = dt('Command was: @command', array('@command' => $command));
@@ -274,7 +276,11 @@ function drush_fuzion_fz_civicrm_upgrade() {
   foreach ($files_to_remove as $filename) {
     $command = 'rm %s';
     if (drush_shell_exec($command, $filename)) {
-      drush_log(dt('Removed @filename', array('@filename' => $filename)));
+      drush_log(dt('Removed @filename from filesystem', array('@filename' => $filename)));
+    }
+    $command = 'git rm %s';
+    if (drush_shell_exec($command, $filename)) {
+      drush_log(dt('Removed @filename from git', array('@filename' => $filename)));
     }
   }
 
@@ -336,6 +342,13 @@ function drush_fuzion_fz_civicrm_upgrade() {
     return drush_set_error('DRUSH_FUZION_DRUPAL_CACHEFLUSH_FAILED', implode(PHP_EOL, $message));
   }
 
+  if (!drush_shell_exec('@drush arch-send', array('@drush' => $drush_cmd))) {
+    drush_log(dt('Archimedes update failed.'), 'warning');
+  }
+
+  if (!drush_shell_exec('git push')) {
+    drush_log(dt('Git push failed.'), 'warning');
+  }
 }
 
 /**
