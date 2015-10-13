@@ -140,6 +140,10 @@ function drush_fuzion_fz_new_site() {
  * Upgrade CiviCRM.
  */
 function drush_fuzion_fz_civicrm_upgrade() {
+  $root = drush_get_context('DRUSH_DRUPAL_CORE');
+  $uri = drush_get_context('DRUSH_URI');
+  $drush_cmd = 'drush -r ' . escapeshellarg($root) . ' -l ' . $uri;
+
   // drush_choice(), drush_prompt() for interactives
   // drush_print for info
   $yes = drush_get_option('yes');
@@ -232,7 +236,7 @@ function drush_fuzion_fz_civicrm_upgrade() {
       $sql_conf = drush_sql_conf();
       $result_file = getenv('HOME') . '/' . $sql_conf['database'] . '-' . date('Ymdhms') . '.sql';
     }
-    $command = dt('drush civicrm-sql-dump --result-file=@result_file --gzip', array('@result_file' => $result_file));
+    $command = dt('@drush civicrm-sql-dump --result-file=@result_file --gzip', array('@drush' => $drush_cmd, '@result_file' => $result_file));
     if (drush_shell_exec($command)) {
       drush_log(dt('Backed up CiviCRM DB in @result_file', array('@result_file' => $result_file)), 'ok');
     }
@@ -277,7 +281,7 @@ function drush_fuzion_fz_civicrm_upgrade() {
   /**
    * Ensure that sites/all/modules/civicrm is not a submodule.
    */
-  $submodules_to_rm = array(
+  $submodules_to_gitrm = array(
     'sites/all/modules/civicrm',
     'sites/all/modules/civicrm/drupal',
     'sites/all/modules/civicrm/packages',
@@ -304,21 +308,29 @@ function drush_fuzion_fz_civicrm_upgrade() {
 
   // Add updated CiviCRM files to git.
   drush_shell_exec('git add -A sites/all/modules/civicrm/*');
-  $command = 'git commit -m ' . escapeshellarg($commitmsg);
-  if (!drush_shell_exec($command)) {
-    $message[] = dt('Unable to commit changes to git.', array('@filename' => $download_path));
-    $message[] = dt('Command was: @command', array('@command' => $command));
-    $message += drush_shell_exec_output();
-    return drush_set_error('DRUSH_FUZION_CIVICRM_EXTRACT_FAILED', implode(PHP_EOL, $message));
+
+  // Commit changes, if required.
+  $command = 'git diff-index --cached --quiet HEAD';
+  if (drush_shell_exec($command)) {
+    drush_log('No changes to commit.', 'ok');
+  }
+  else {
+    $command = 'git commit -m ' . escapeshellarg($commitmsg);
+    if (!drush_shell_exec($command)) {
+      $message[] = dt('Unable to commit changes to git.', array('@filename' => $download_path));
+      $message[] = dt('Command was: @command', array('@command' => $command));
+      $message += drush_shell_exec_output();
+      return drush_set_error('DRUSH_FUZION_CIVICRM_EXTRACT_FAILED', implode(PHP_EOL, $message));
+    }
   }
 
-  if (!drush_shell_exec('drush cvapi system.flush')) {
+  if (!drush_shell_exec(dt('@drush cvapi system.flush', array('@drush' => $drush_cmd)))) {
     $message[] = dt('Unable to flush CiviCRM caches.');
     $message += drush_shell_exec_output();
     return drush_set_error('DRUSH_FUZION_CIVICRM_CACHEFLUSH_FAILED', implode(PHP_EOL, $message));
   }
 
-  if (!drush_shell_exec('drush cc all')) {
+  if (!drush_shell_exec(dt('@drush cc all', array('@drush' => $drush_cmd)))) {
     $message[] = dt('Unable to flush Drupal caches.');
     $message += drush_shell_exec_output();
     return drush_set_error('DRUSH_FUZION_DRUPAL_CACHEFLUSH_FAILED', implode(PHP_EOL, $message));
