@@ -144,6 +144,10 @@ function drush_fuzion_fz_civicrm_upgrade() {
   // drush_print for info
   $yes = drush_get_option('yes');
 
+  if (_fuzion_warn_clean_git()) {
+    return drush_set_error('DRUSH_FUZION_GIT_UNCOMMITTED', dt('Drupal site has missing or unclean Git repo.'));
+  }
+
   // Retrieve the latest stable release from CiviCRM.org, unless we've been
   // instructed to use a specific release via --release=X.X.X
   if (!$release = drush_get_option('tarball-release')) {
@@ -223,10 +227,6 @@ function drush_fuzion_fz_civicrm_upgrade() {
     }
   }
 
-  if (_fuzion_warn_clean_git()) {
-    return drush_set_error('DRUSH_FUZION_GIT_UNCOMMITTED', dt('Drupal site has missing or unclean Git repo.'));
-  }
-
   if (!drush_get_option('skip-backups')) {
     if (!$result_file = drush_get_option('result-file')) {
       $sql_conf = drush_sql_conf();
@@ -241,11 +241,21 @@ function drush_fuzion_fz_civicrm_upgrade() {
     }
   }
 
+  // Detect which flavour of tar is installed: GNU or BSD.
+  $command = 'tar --version | grep -q gnu';
+  if (drush_shell_exec($command)) {
+    $tar_args = '--no-overwrite-dir';
+  }
+  else {
+    $tar_args = '';
+  }
+
   // OK, we're ready to go. We have a tarball, a commit message.
   $params = array(
     '@filename' => $download_path,
+    '@tar_args' => $tar_args,
   );
-  $command = dt('tar -xf @filename --no-overwrite-dir -s "#^civicrm#sites/all/modules/civicrm#g"', $params);
+  $command = dt('tar -xf @filename @tar_args -s "#^civicrm#sites/all/modules/civicrm#g"', $params);
   if (!drush_shell_exec($command)) {
     $message[] = dt('Unable to extract tarball at @filename', array('@filename' => $download_path));
     $message[] = dt('Command was: @command', array('@command' => $command));
@@ -253,6 +263,46 @@ function drush_fuzion_fz_civicrm_upgrade() {
     return drush_set_error('DRUSH_FUZION_CIVICRM_EXTRACT_FAILED', implode(PHP_EOL, $message));
   }
 
+  // Ensure some files do not exist.
+  $files_to_remove = array(
+    'sites/all/modules/civicrm/.gitignore'
+  );
+  foreach ($files_to_remove as $filename) {
+    $command = 'rm %s';
+    if (drush_shell_exec($command, $filename)) {
+      drush_log(dt('Removed @filename', array('@filename' => $filename)));
+    }
+  }
+
+  /**
+   * Ensure that sites/all/modules/civicrm is not a submodule.
+   */
+  $submodules_to_rm = array(
+    'sites/all/modules/civicrm',
+    'sites/all/modules/civicrm/drupal',
+    'sites/all/modules/civicrm/packages',
+  );
+  foreach ($submodules_to_gitrm as $path) {
+    if (drush_shell_exec('git rm --cached %s', $path)) {
+      drush_log(dt('Removed submodule @path', array('@path' => $path)), 'ok');
+    }
+  }
+
+  /**
+   * Ensure that civicrm.settings.php is excluded by sites/.gitignore
+   * Using sites/.gitignore ensures that Drupal upgrade doesn't overwrite the
+   * change on upgrade, and that the .gitignore affects sites/example.org also.
+   */
+  if (!drush_shell_exec('grep civicrm.settings.php sites/.gitignore')) {
+    $command = "echo '*/civicrm.settings.php' >> sites/.gitignore";
+    if (drush_shell_exec($command)) {
+      drush_log('Added civicrm.settings.php to sites/.gitignore', 'ok');
+      drush_shell_exec('git add sites/.gitignore');
+      drush_shell_exec('git commit -m "Ignore civicrm.settings.php"');
+    }
+  }
+
+  // Add updated CiviCRM files to git.
   drush_shell_exec('git add -A sites/all/modules/civicrm/*');
   $command = 'git commit -m ' . escapeshellarg($commitmsg);
   if (!drush_shell_exec($command)) {
@@ -276,6 +326,9 @@ function drush_fuzion_fz_civicrm_upgrade() {
 
 }
 
+/**
+ * Extract the latest stable release from CiviCRM's versions.json
+ */
 function _drush_fuzion_find_latest_stable($versions) {
   foreach ($versions as $k => $data) {
     if ($data->status == 'stable') {
