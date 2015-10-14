@@ -144,18 +144,38 @@ function drush_fuzion_fz_new_site() {
  * Upgrade CiviCRM.
  */
 function drush_fuzion_fz_civicrm_upgrade() {
+  // drush_choice(), drush_prompt() for interactives
+  // drush_print for info
+
   $root = drush_get_context('DRUSH_DRUPAL_CORE');
   $uri = drush_get_context('DRUSH_URI');
   $drush_cmd = 'drush -r ' . escapeshellarg($root) . ' -l ' . $uri;
 
-  // drush_choice(), drush_prompt() for interactives
-  // drush_print for info
   $yes = drush_get_option('yes');
 
   if (_fuzion_warn_clean_git()) {
     return drush_set_error('DRUSH_FUZION_GIT_UNCOMMITTED', dt('Drupal site has missing or unclean Git repo.'));
   }
 
+  // Check that the site already has a minimum version specified.
+  if (!$min_version = drush_get_option('min-version')) {
+      $min_version = '0';
+  }
+  try {
+      civicrm_initialize();
+      $code_version = CRM_Utils_System::version();
+      $db_version = CRM_Core_BAO_Domain::version();
+      if ($code_version != $db_version) {
+          return drush_set_error('DRUSH_FUZION_CIVICRM_VERSIONMISMATCH', dt('CiviCRM DB and code versions differ. Please resolve this then try again.'));
+      }
+      if (!version_compare($code_version, $min_version, '>=')) {
+          return drush_set_error('DRUSH_FUZION_CIVICRM_VERSIONINSUFFICENT', dt('CiviCRM version @codever is less than specified minimum version @minver.', array('@codever' => $code_version, '@minver' => $min_version)));
+      }
+  }
+  catch (Exception $e) {
+      return drush_set_error('DRUSH_FUZION_CIVICRM_NOTINITIALIZED', dt('CiviCRM did not initialize.'));
+  }
+  
   // Retrieve the latest stable release from CiviCRM.org, unless we've been
   // instructed to use a specific release via --release=X.X.X
   if (!$release = drush_get_option('tarball-release')) {
