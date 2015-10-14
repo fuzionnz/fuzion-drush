@@ -366,7 +366,7 @@ function drush_fuzion_fz_civicrm_upgrade() {
     return drush_set_error('DRUSH_FUZION_DRUPAL_CACHEFLUSH_FAILED', implode(PHP_EOL, $message));
   }
 
-  if (!drush_shell_exec('@drush arch-send', array('@drush' => $drush_cmd))) {
+  if (!drush_shell_exec(dt('@drush arch-send', array('@drush' => $drush_cmd)))) {
     drush_log(dt('Archimedes update failed.'), 'warning');
   }
 
