@@ -152,7 +152,7 @@ function drush_fuzion_fz_civicrm_upgrade() {
   $drush_cmd = 'drush -r ' . escapeshellarg($root) . ' -l ' . $uri;
 
   $yes = drush_get_option('yes');
-  $verbose = defined(DRUSH_VERBOSE) && DRUSH_VERBOSE);
+  $verbose = drush_get_context('DRUSH_VERBOSE');
 
   if (_fuzion_warn_clean_git()) {
     return drush_set_error('DRUSH_FUZION_GIT_UNCOMMITTED', dt('Drupal site has missing or unclean Git repo.'));
@@ -411,7 +411,7 @@ function drush_fuzion_fz_civicrm_upgrade() {
     drush_log(dt('Git push failed.'), 'warning');
   }
 
-  drush_log(dt('Upgraded CiviCRM to @release in @path.', array('@release' => $release, '@path' => $root)));
+  drush_log(dt('Upgraded CiviCRM from @old_release to @release in @path.', array('@old_release' => $code_version, '@release' => $release, '@path' => $root)), 'ok');
 }
 
 /**
