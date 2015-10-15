@@ -152,7 +152,7 @@ function drush_fuzion_fz_civicrm_upgrade() {
   $drush_cmd = 'drush -r ' . escapeshellarg($root) . ' -l ' . $uri;
 
   $yes = drush_get_option('yes');
-  $verbose = drush_get_option('yes');
+  $verbose = defined(DRUSH_VERBOSE) && DRUSH_VERBOSE);
 
   if (_fuzion_warn_clean_git()) {
     return drush_set_error('DRUSH_FUZION_GIT_UNCOMMITTED', dt('Drupal site has missing or unclean Git repo.'));
