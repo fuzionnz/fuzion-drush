@@ -152,6 +152,7 @@ function drush_fuzion_fz_civicrm_upgrade() {
   $drush_cmd = 'drush -r ' . escapeshellarg($root) . ' -l ' . $uri;
 
   $yes = drush_get_option('yes');
+  $verbose = drush_get_option('yes');
 
   if (_fuzion_warn_clean_git()) {
     return drush_set_error('DRUSH_FUZION_GIT_UNCOMMITTED', dt('Drupal site has missing or unclean Git repo.'));
@@ -175,7 +176,7 @@ function drush_fuzion_fz_civicrm_upgrade() {
   catch (Exception $e) {
       return drush_set_error('DRUSH_FUZION_CIVICRM_NOTINITIALIZED', dt('CiviCRM did not initialize.'));
   }
-  
+
   // Retrieve the latest stable release from CiviCRM.org, unless we've been
   // instructed to use a specific release via --release=X.X.X
   if (!$release = drush_get_option('tarball-release')) {
@@ -195,8 +196,9 @@ function drush_fuzion_fz_civicrm_upgrade() {
     $tag = $data[0] . '.' . $data[1];
   }
 
-  // Parameter for Fuzion's special tags. (Fuzion dist server has -release1 in
-  // the directory, need to check with Eileen why this is.)
+  // Parameter for build date. (Fuzion uses "nightly" only, but CiviCRM.org has
+  // dates, and this may be a fann_get_sarprop_step_error_threshold_factor if
+  // you're ahead of US time.)
   if (!$tarball_date = drush_get_option('tarball-date')) {
     // This doesn't account for the CiviCRM server being in US time.
     // Tarballs seem to arrive between 10am and 2pm NZDST?
@@ -242,7 +244,9 @@ function drush_fuzion_fz_civicrm_upgrade() {
   $download_path = drush_download_file($tarball_url, $tmp_path, $cache_duration);
 
   if ($download_path || drush_get_context('DRUSH_SIMULATE')) {
-    drush_log(dt('Downloading !filename was successful.', array('!filename' => $filename)));
+    if ($verbose) {
+      drush_log(dt('Downloading !filename was successful.', array('!filename' => $filename)));
+    }
   }
   else {
     return drush_set_error('DRUSH_FUZION_DOWNLOAD_FAILED', dt('Unable to download !version to !path from !url.', array('!version' => 'CiviCRM ' . $release, '!path' => $tmp_path, '!url' => $tarball_url)));
@@ -263,7 +267,9 @@ function drush_fuzion_fz_civicrm_upgrade() {
     }
     $command = dt('@drush civicrm-sql-dump --result-file=@result_file --gzip', array('@drush' => $drush_cmd, '@result_file' => $result_file));
     if (drush_shell_exec($command)) {
-      drush_log(dt('Backed up CiviCRM DB in @result_file', array('@result_file' => $result_file)), 'ok');
+      if ($verbose) {
+        drush_log(dt('Backed up CiviCRM DB in @result_file', array('@result_file' => $result_file)), 'ok');
+      }
     }
     else {
       return drush_set_error('DRUSH_FUZION_SQLDUMP_FAILED', dt('Unable to make snapshot of DB to @result_file', array('@result_file' => $result_file)));
@@ -330,14 +336,20 @@ function drush_fuzion_fz_civicrm_upgrade() {
   if (!drush_shell_exec('grep civicrm.settings.php sites/.gitignore')) {
     $command = "echo '*/civicrm.settings.php' >> sites/.gitignore";
     if (drush_shell_exec($command)) {
-      drush_log('Added civicrm.settings.php to sites/.gitignore', 'ok');
+      if ($verbose) {
+        drush_log('Added civicrm.settings.php to sites/.gitignore', 'ok');
+      }
       drush_shell_exec('git add sites/.gitignore');
       drush_shell_exec('git commit -m "Ignore civicrm.settings.php"');
     }
   }
 
   // Add updated CiviCRM files to git.
-  drush_shell_exec('git add -A sites/all/modules/civicrm/*');
+  if (drush_shell_exec('git add -A sites/all/modules/civicrm/* sites/all/modules/civicrm/.*')) {
+    if ($verbose) {
+      drush_log('Staged files in sites/all/modules/civicrm/* for commit.', 'ok');
+    }
+  }
 
   // Commit changes, if required.
   $command = 'git diff-index --cached --quiet HEAD';
@@ -346,7 +358,12 @@ function drush_fuzion_fz_civicrm_upgrade() {
   }
   else {
     $command = 'git commit -m ' . escapeshellarg($commitmsg);
-    if (!drush_shell_exec($command)) {
+    if (drush_shell_exec($command)) {
+      if ($verbose) {
+        drush_log('Committed changes.', 'ok');
+      }
+    }
+    else {
       $message[] = dt('Unable to commit changes to git.', array('@filename' => $download_path));
       $message[] = dt('Command was: @command', array('@command' => $command));
       $message += drush_shell_exec_output();
@@ -354,23 +371,43 @@ function drush_fuzion_fz_civicrm_upgrade() {
     }
   }
 
-  if (!drush_shell_exec(dt('@drush cvapi system.flush', array('@drush' => $drush_cmd)))) {
+  if (drush_shell_exec(dt('@drush cvapi system.flush', array('@drush' => $drush_cmd)))) {
+    if ($verbose) {
+      drush_log('Flushed CiviCRM caches.', 'ok');
+    }
+  }
+  else {
     $message[] = dt('Unable to flush CiviCRM caches.');
     $message += drush_shell_exec_output();
     return drush_set_error('DRUSH_FUZION_CIVICRM_CACHEFLUSH_FAILED', implode(PHP_EOL, $message));
   }
 
-  if (!drush_shell_exec(dt('@drush cc all', array('@drush' => $drush_cmd)))) {
+  if (drush_shell_exec(dt('@drush cc all', array('@drush' => $drush_cmd)))) {
+    if ($verbose) {
+      drush_log('Flushed Drupal caches.', 'ok');
+    }
+  }
+  else {
     $message[] = dt('Unable to flush Drupal caches.');
     $message += drush_shell_exec_output();
     return drush_set_error('DRUSH_FUZION_DRUPAL_CACHEFLUSH_FAILED', implode(PHP_EOL, $message));
   }
 
-  if (!drush_shell_exec(dt('@drush arch-send', array('@drush' => $drush_cmd)))) {
+  if (drush_shell_exec(dt('@drush arch-send', array('@drush' => $drush_cmd)))) {
+    if ($verbose) {
+      drush_log('Reported to Archimedes.', 'ok');
+    }
+  }
+  else {
     drush_log(dt('Archimedes update failed.'), 'warning');
   }
 
-  if (!drush_shell_exec('git push')) {
+  if (drush_shell_exec('git push')) {
+    if ($verbose) {
+      drush_log('Pushed to default Git remote.', 'ok');                  
+    }
+  }
+  else {
     drush_log(dt('Git push failed.'), 'warning');
   }
 }
