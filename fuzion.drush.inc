@@ -404,12 +404,14 @@ function drush_fuzion_fz_civicrm_upgrade() {
 
   if (drush_shell_exec('git push')) {
     if ($verbose) {
-      drush_log('Pushed to default Git remote.', 'ok');                  
+      drush_log('Pushed to default Git remote.', 'ok');
     }
   }
   else {
     drush_log(dt('Git push failed.'), 'warning');
   }
+
+  drush_log(dt('Upgraded CiviCRM to @release in @path.', array('@release' => $release, '@path' => $root)));
 }
 
 /**
