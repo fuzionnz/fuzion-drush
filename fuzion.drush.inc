@@ -160,21 +160,24 @@ function drush_fuzion_fz_civicrm_upgrade() {
 
   // Check that the site already has a minimum version specified.
   if (!$min_version = drush_get_option('min-version')) {
-      $min_version = '0';
+    $min_version = '0';
   }
   try {
-      civicrm_initialize();
-      $code_version = CRM_Utils_System::version();
-      $db_version = CRM_Core_BAO_Domain::version();
-      if ($code_version != $db_version) {
-          return drush_set_error('DRUSH_FUZION_CIVICRM_VERSIONMISMATCH', dt('CiviCRM DB and code versions differ. Please resolve this then try again.'));
-      }
-      if (!version_compare($code_version, $min_version, '>=')) {
-          return drush_set_error('DRUSH_FUZION_CIVICRM_VERSIONINSUFFICENT', dt('CiviCRM version @codever is less than specified minimum version @minver.', array('@codever' => $code_version, '@minver' => $min_version)));
-      }
+    if (!function_exists('civicrm_initialize')) {
+      return drush_set_error('DRUSH_FUZION_NO_CIVICRM_INITIALIZE', dt('Unable to find function civicrm_initialize, does this site really have CiviCRM installed?'));
+    }
+    civicrm_initialize();
+    $code_version = CRM_Utils_System::version();
+    $db_version = CRM_Core_BAO_Domain::version();
+    if ($code_version != $db_version) {
+        return drush_set_error('DRUSH_FUZION_CIVICRM_VERSIONMISMATCH', dt('CiviCRM DB and code versions differ. Please resolve this then try again.'));
+    }
+    if (!version_compare($code_version, $min_version, '>=')) {
+        return drush_set_error('DRUSH_FUZION_CIVICRM_VERSIONINSUFFICENT', dt('CiviCRM version @codever is less than specified minimum version @minver.', array('@codever' => $code_version, '@minver' => $min_version)));
+    }
   }
   catch (Exception $e) {
-      return drush_set_error('DRUSH_FUZION_CIVICRM_NOTINITIALIZED', dt('CiviCRM did not initialize.'));
+    return drush_set_error('DRUSH_FUZION_CIVICRM_NOTINITIALIZED', dt('CiviCRM did not initialize.'));
   }
 
   // Retrieve the latest stable release from CiviCRM.org, unless we've been
