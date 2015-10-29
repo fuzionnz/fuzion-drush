@@ -1,3 +1,4 @@
+; We haven't used this in a while, you shouldn't either :)
 api = 2
 core = 7.x
 
