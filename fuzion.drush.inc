@@ -44,12 +44,13 @@ function _fuzion_validate_clean_git() {
     }
   }
   else {
-    return array(
-      dt('There is no Git repository initialized in @path', array('@path' => $path))
-    );
+    return array(dt('There is no Git repository initialized in @path', array('@path' => $path)));
   }
 }
 
+/**
+ * Warn if Git not in clean state.
+ */
 function _fuzion_warn_clean_git() {
   if ($messages = _fuzion_validate_clean_git()) {
     drush_log(array_shift($messages), 'warning');
@@ -91,14 +92,13 @@ function fuzion_drush_command() {
       'tarball-release' => 'CiviCRM release (eg "4.6.9") to install. Defaults to latest stable release.',
       'tarball-tag' => 'Release tag (eg "release1"). Defaults empty, required for Fuzion tarballs where release and tag differ.',
       'tarball-date' => 'Date (eg 20151012) or "nightly". Required for Fuzion tarballs.',
-    )
+    ),
   );
   return $items;
 }
 
 /**
- * Work around lack of Archimedes package on d.o and install it via
- * makefile.
+ * Work around lack of Archimedes package on d.o and install it via makefile.
  */
 function drush_fuzion_fz_install_archimedes() {
   $version_parts = explode('.', VERSION);
@@ -115,7 +115,7 @@ function drush_fuzion_fz_install_archimedes() {
     }
     return drush_set_error('DRUSH_FUZION_ARCHIMEDES_INSTALL_PROBLEM', dt('Unable to install Archimedes via !command.', array('!command' => $command)));
   }
-  // Enable Archimedes and Archimedes Extras
+  // Enable Archimedes and Archimedes Extras.
   $command = 'drush ' . $verbose . ' -y en archimedes archimedes_extras';
   drush_log($command, 'ok');
   if (!drush_shell_exec($command)) {
@@ -144,9 +144,6 @@ function drush_fuzion_fz_new_site() {
  * Upgrade CiviCRM.
  */
 function drush_fuzion_fz_civicrm_upgrade() {
-  // drush_choice(), drush_prompt() for interactives
-  // drush_print for info
-
   $root = drush_get_context('DRUSH_DRUPAL_CORE');
   $uri = drush_get_context('DRUSH_URI');
   $drush_cmd = 'drush -r ' . escapeshellarg($root) . ' -l ' . $uri;
@@ -170,10 +167,10 @@ function drush_fuzion_fz_civicrm_upgrade() {
     $code_version = CRM_Utils_System::version();
     $db_version = CRM_Core_BAO_Domain::version();
     if ($code_version != $db_version) {
-        return drush_set_error('DRUSH_FUZION_CIVICRM_VERSIONMISMATCH', dt('CiviCRM DB and code versions differ. Please resolve this then try again.'));
+      return drush_set_error('DRUSH_FUZION_CIVICRM_VERSIONMISMATCH', dt('CiviCRM DB and code versions differ. Please resolve this then try again.'));
     }
     if (!version_compare($code_version, $min_version, '>=')) {
-        return drush_set_error('DRUSH_FUZION_CIVICRM_VERSIONINSUFFICENT', dt('CiviCRM version @codever is less than specified minimum version @minver.', array('@codever' => $code_version, '@minver' => $min_version)));
+      return drush_set_error('DRUSH_FUZION_CIVICRM_VERSIONINSUFFICENT', dt('CiviCRM version @codever is less than specified minimum version @minver.', array('@codever' => $code_version, '@minver' => $min_version)));
     }
   }
   catch (Exception $e) {
@@ -241,7 +238,7 @@ function drush_fuzion_fz_civicrm_upgrade() {
   );
   $tarball_url = dt('@url/by-date/latest/@tag/civicrm-@release-@drupal-@date.tar.gz', $params);
 
-  $cache_duration = (drush_get_option('cache', TRUE)) ? 86400*365 : 0;
+  $cache_duration = (drush_get_option('cache', TRUE)) ? 86400 * 365 : 0;
   $filename = str_replace('?', '_', basename($tarball_url));
   $tmp_path = drush_tempdir() . '/' . $filename;
   $download_path = drush_download_file($tarball_url, $tmp_path, $cache_duration);
@@ -252,7 +249,13 @@ function drush_fuzion_fz_civicrm_upgrade() {
     }
   }
   else {
-    return drush_set_error('DRUSH_FUZION_DOWNLOAD_FAILED', dt('Unable to download !version to !path from !url.', array('!version' => 'CiviCRM ' . $release, '!path' => $tmp_path, '!url' => $tarball_url)));
+    $args = array(
+      '!version' => 'CiviCRM ' . $release,
+      '!path' => $tmp_path,
+      '!url' => $tarball_url,
+    );
+    $msg = dt('Unable to download !version to !path from !url.', $args);
+    return drush_set_error('DRUSH_FUZION_DOWNLOAD_FAILED', $msg);
   }
 
   // Get a commit message to log with this upgrade.
@@ -303,9 +306,7 @@ function drush_fuzion_fz_civicrm_upgrade() {
   }
 
   // Ensure some files do not exist.
-  $files_to_remove = array(
-    'sites/all/modules/civicrm/.gitignore'
-  );
+  $files_to_remove = array('sites/all/modules/civicrm/.gitignore');
   foreach ($files_to_remove as $filename) {
     $command = 'rm %s';
     if (drush_shell_exec($command, $filename)) {
@@ -317,9 +318,7 @@ function drush_fuzion_fz_civicrm_upgrade() {
     }
   }
 
-  /**
-   * Ensure that sites/all/modules/civicrm is not a submodule.
-   */
+  // Ensure that sites/all/modules/civicrm is not a submodule.
   $submodules_to_gitrm = array(
     'sites/all/modules/civicrm',
     'sites/all/modules/civicrm/drupal',
@@ -331,11 +330,9 @@ function drush_fuzion_fz_civicrm_upgrade() {
     }
   }
 
-  /**
-   * Ensure that civicrm.settings.php is excluded by sites/.gitignore
-   * Using sites/.gitignore ensures that Drupal upgrade doesn't overwrite the
-   * change on upgrade, and that the .gitignore affects sites/example.org also.
-   */
+  // Ensure that civicrm.settings.php is excluded by sites/.gitignore -
+  // Using sites/.gitignore ensures that Drupal upgrade doesn't overwrite the
+  // change on upgrade, and that the .gitignore affects sites/example.org also.
   if (!drush_shell_exec('grep civicrm.settings.php sites/.gitignore')) {
     $command = "echo '*/civicrm.settings.php' >> sites/.gitignore";
     if (drush_shell_exec($command)) {
@@ -413,12 +410,16 @@ function drush_fuzion_fz_civicrm_upgrade() {
   else {
     drush_log(dt('Git push failed.'), 'warning');
   }
-
-  drush_log(dt('Upgraded CiviCRM from @old_release to @release in @path.', array('@old_release' => $code_version, '@release' => $release, '@path' => $root)), 'ok');
+  $args = array(
+    '@old_release' => $code_version,
+    '@release' => $release,
+    '@path' => $root,
+  );
+  drush_log(dt('Upgraded CiviCRM from @old_release to @release in @path.', $args), 'ok');
 }
 
 /**
- * Extract the latest stable release from CiviCRM's versions.json
+ * Extract the latest stable release from CiviCRM's versions.json.
  */
 function _drush_fuzion_find_latest_stable($versions) {
   foreach ($versions as $k => $data) {
