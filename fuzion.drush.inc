@@ -297,6 +297,17 @@ function drush_fuzion_fz_civicrm_upgrade() {
     '@tar_args' => $tar_args,
   );
 
+  if (drush_shell_exec(dt('@drush civicrm-sql-dump --result-file --gzip', array('@drush' => $drush_cmd)))) {
+    if ($verbose) {
+      drush_log('Backed up CiviCRM DB.', 'ok');
+    }
+  }
+  else {
+    $message[] = dt('Unable to back up CiviCRM DB.');
+    $message += drush_shell_exec_output();
+    return drush_set_error('DRUSH_FUZION_CIVICRM_CACHEFLUSH_FAILED', implode(PHP_EOL, $message));
+  }
+
   $command = dt('tar -xf @filename @tar_args -C sites/all/modules', $params);
   if (!drush_shell_exec($command)) {
     $message[] = dt('Unable to extract tarball at @filename', array('@filename' => $download_path));
