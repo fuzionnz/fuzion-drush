@@ -146,7 +146,7 @@ function drush_fuzion_fz_new_site() {
 function drush_fuzion_fz_civicrm_upgrade() {
   $root = drush_get_context('DRUSH_DRUPAL_CORE');
   $uri = drush_get_context('DRUSH_URI');
-  $drush_cmd = 'drush -r ' . escapeshellarg($root) . ' -l ' . $uri;
+  $drush_cmd = 'drush -r ' . $root . ' -l ' . $uri;
 
   $yes = drush_get_option('yes');
   $verbose = drush_get_context('DRUSH_VERBOSE');
@@ -271,7 +271,7 @@ function drush_fuzion_fz_civicrm_upgrade() {
       $sql_conf = drush_sql_conf();
       $result_file = getenv('HOME') . '/' . $sql_conf['database'] . '-' . date('Ymdhms') . '.sql';
     }
-    $command = dt('@drush civicrm-sql-dump --result-file=@result_file --gzip', array('@drush' => $drush_cmd, '@result_file' => $result_file));
+    $command = dt('@drush civicrm-sql-dump --result-file=@result_file', array('@drush' => $drush_cmd, '@result_file' => $result_file));
     if (drush_shell_exec($command)) {
       if ($verbose) {
         drush_log(dt('Backed up CiviCRM DB in @result_file', array('@result_file' => $result_file)), 'ok');
