@@ -371,6 +371,17 @@ function drush_fuzion_fz_civicrm_upgrade() {
     }
   }
 
+  if (drush_shell_exec(dt('@drush civicrm-upgrade-db', array('@drush' => $drush_cmd)))) {
+    if ($verbose) {
+      drush_log('Upgraded CiviCRM DB.', 'ok');
+    }
+  }
+  else {
+    $message[] = dt('Unable to upgrade CiviCRM DB.');
+    $message += drush_shell_exec_output();
+    return drush_set_error('DRUSH_FUZION_CIVICRM_CACHEFLUSH_FAILED', implode(PHP_EOL, $message));
+  }
+
   if (drush_shell_exec(dt('@drush cvapi system.flush', array('@drush' => $drush_cmd)))) {
     if ($verbose) {
       drush_log('Flushed CiviCRM caches.', 'ok');
