@@ -7,4 +7,4 @@ projects[archimedes][download][url] = https://projects.fuzion.co.nz/sites/defaul
 
 projects[archimedes_extras][type] = module
 projects[archimedes_extras][download][type] = get
-projects[archimedes_extras][download][url] = https://projects.fuzion.co.nz/sites/default/files/releases/archimedes_extras-7.x-1.3.tar.gz
+projects[archimedes_extras][download][url] = https://projects.fuzion.co.nz/sites/default/files/releases/archimedes_extras-7.x-1.4.tar.gz
