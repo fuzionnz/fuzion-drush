@@ -88,6 +88,7 @@ function fuzion_drush_command() {
       'commit' => 'Commit message to apply post-upgrade.',
       'min-version' => 'Required version to commence upgrade, eg --version-min=4.5 to avoid upgrading sites still on 4.4',
       'skip-backups' => 'Do not make DB backups pre-upgrade.',
+      'skip-git' => 'Ignore missing or unclean Git repository.',
       'aliases' => array('fz-cvup'),
       'tarball-release' => 'CiviCRM release (eg "4.6.9") to install. Defaults to latest stable release.',
       'tarball-tag' => 'Release tag (eg "release1"). Defaults empty, required for Fuzion tarballs where release and tag differ.',
@@ -151,7 +152,7 @@ function drush_fuzion_fz_civicrm_upgrade() {
   $yes = drush_get_option('yes');
   $verbose = drush_get_context('DRUSH_VERBOSE');
 
-  if (_fuzion_warn_clean_git()) {
+  if (!drush_get_option('skip-git') && _fuzion_warn_clean_git()) {
     return drush_set_error('DRUSH_FUZION_GIT_UNCOMMITTED', dt('Drupal site has missing or unclean Git repo.'));
   }
 
