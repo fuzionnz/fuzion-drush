@@ -118,6 +118,10 @@ function drush_fuzion_fz_install_archimedes() {
   }
   // Enable Archimedes and Archimedes Extras.
   $command = 'drush ' . $verbose . ' -y en archimedes archimedes_extras';
+  // If CiviCRM is enabled, add Archimedes CiviCRM.
+  if (module_exists('civicrm')) {
+    $command .= ' archimedes_civicrm';
+  }
   drush_log($command, 'ok');
   if (!drush_shell_exec($command)) {
     if (drush_get_context('DRUSH_VERBOSE')) {
