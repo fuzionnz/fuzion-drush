@@ -88,6 +88,7 @@ function fuzion_drush_command() {
       'commit' => 'Commit message to apply post-upgrade.',
       'min-version' => 'Required version to commence upgrade, eg --version-min=4.5 to avoid upgrading sites still on 4.4',
       'skip-backups' => 'Do not make DB backups pre-upgrade.',
+      'skip-git' => 'Ignore missing or unclean Git repository.',
       'aliases' => array('fz-cvup'),
       'tarball-release' => 'CiviCRM release (eg "4.6.9") to install. Defaults to latest stable release.',
       'tarball-tag' => 'Release tag (eg "release1"). Defaults empty, required for Fuzion tarballs where release and tag differ.',
@@ -117,6 +118,10 @@ function drush_fuzion_fz_install_archimedes() {
   }
   // Enable Archimedes and Archimedes Extras.
   $command = 'drush ' . $verbose . ' -y en archimedes archimedes_extras';
+  // If CiviCRM is enabled, add Archimedes CiviCRM.
+  if (module_exists('civicrm')) {
+    $command .= ' archimedes_civicrm';
+  }
   drush_log($command, 'ok');
   if (!drush_shell_exec($command)) {
     if (drush_get_context('DRUSH_VERBOSE')) {
@@ -146,12 +151,12 @@ function drush_fuzion_fz_new_site() {
 function drush_fuzion_fz_civicrm_upgrade() {
   $root = drush_get_context('DRUSH_DRUPAL_CORE');
   $uri = drush_get_context('DRUSH_URI');
-  $drush_cmd = 'drush -r ' . escapeshellarg($root) . ' -l ' . $uri;
+  $drush_cmd = 'drush -r ' . $root . ' -l ' . $uri;
 
   $yes = drush_get_option('yes');
   $verbose = drush_get_context('DRUSH_VERBOSE');
 
-  if (_fuzion_warn_clean_git()) {
+  if (!drush_get_option('skip-git') && _fuzion_warn_clean_git()) {
     return drush_set_error('DRUSH_FUZION_GIT_UNCOMMITTED', dt('Drupal site has missing or unclean Git repo.'));
   }
 
@@ -271,7 +276,7 @@ function drush_fuzion_fz_civicrm_upgrade() {
       $sql_conf = drush_sql_conf();
       $result_file = getenv('HOME') . '/' . $sql_conf['database'] . '-' . date('Ymdhms') . '.sql';
     }
-    $command = dt('@drush civicrm-sql-dump --result-file=@result_file --gzip', array('@drush' => $drush_cmd, '@result_file' => $result_file));
+    $command = dt('@drush civicrm-sql-dump --result-file=@result_file', array('@drush' => $drush_cmd, '@result_file' => $result_file));
     if (drush_shell_exec($command)) {
       if ($verbose) {
         drush_log(dt('Backed up CiviCRM DB in @result_file', array('@result_file' => $result_file)), 'ok');
@@ -369,6 +374,17 @@ function drush_fuzion_fz_civicrm_upgrade() {
       $message += drush_shell_exec_output();
       return drush_set_error('DRUSH_FUZION_CIVICRM_EXTRACT_FAILED', implode(PHP_EOL, $message));
     }
+  }
+
+  if (drush_shell_exec(dt('@drush civicrm-upgrade-db', array('@drush' => $drush_cmd)))) {
+    if ($verbose) {
+      drush_log('Upgraded CiviCRM DB.', 'ok');
+    }
+  }
+  else {
+    $message[] = dt('Unable to upgrade CiviCRM DB.');
+    $message += drush_shell_exec_output();
+    return drush_set_error('DRUSH_FUZION_CIVICRM_CACHEFLUSH_FAILED', implode(PHP_EOL, $message));
   }
 
   if (drush_shell_exec(dt('@drush cvapi system.flush', array('@drush' => $drush_cmd)))) {
