@@ -6,10 +6,6 @@ projects[civicrm][type] = module
 projects[civicrm][download][type] = get
 projects[civicrm][download][url] = https://download.civicrm.org/civicrm-4.7.22-drupal.tar.gz
 
-;; Modify release version for identification.
-;; @TODO Modify Drupal .info versions also.
-projects[civicrm][patch][version] = https://gist.githubusercontent.com/xurizaemon/47e5c080569bd8d6c323a4b6436d8c41/raw/14140497659cb6753249d300febddc8dbdf9eb26/4.7.22.1-fuzion.patch
-
 ;; Apply patches we want added.
 ; Merged in 4.7.23
 projects[civicrm][patch][CRM-20812] = https://patch-diff.githubusercontent.com/raw/civicrm/civicrm-core/pull/10606.patch
