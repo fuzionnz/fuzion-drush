@@ -15,6 +15,7 @@ projects[civicrm][patch][CRM-20636] = https://patch-diff.githubusercontent.com/r
 projects[civicrm][patch][CRM-20533] = https://patch-diff.githubusercontent.com/raw/civicrm/civicrm-core/pull/10414.patch
 projects[civicrm][patch][CRM-20719] = https://patch-diff.githubusercontent.com/raw/civicrm/civicrm-core/pull/10496.patch
 projects[civicrm][patch][CRM-20728] = https://patch-diff.githubusercontent.com/raw/civicrm/civicrm-core/pull/10501.patch
+projects[civicrm][patch][multiple] = https://github.com/civicrm/civicrm-core/commit/e3832b5baea2c33fd9cf7280f1327866c3f4619e.patch
 
 ;; @TODO How to apply patches to {packages,drupal} better?
 ; For now, we'll manually modify the PR patches
