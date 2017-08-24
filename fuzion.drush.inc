@@ -69,15 +69,6 @@ function fuzion_drush_command() {
     'description' => 'Install Archimedes on a site.',
     'aliases' => array('arch-install'),
   );
-  $items['fz-install-civicrm'] = array(
-    'description' => 'Install / upgrade Archimedes on a site.',
-    'aliases' => array('fz-upgrade-civicrm'),
-    'arguments' => array(
-      'release' => 'Name of Fuzion CiviCRM release to install, eg "4.7.22.1".',
-    ),
-    'options' => array(
-    ),
-  );
   $items['fz-new-site'] = array(
     'description' => 'Install a new site with Fuzion Drupal + Fuzion CiviCRM.',
     'aliases' => array('fz-newsite'),
@@ -105,39 +96,6 @@ function fuzion_drush_command() {
     ),
   );
   return $items;
-}
-
-/**
- * Work around lack of Archimedes package on d.o and install it via makefile.
- */
-function drush_fuzion_fz_install_civicrm($release = '') {
-  // @TODO Warn if called with fz-civicrm-upgrade syntax?
-
-  // @TODO Require a release (that exists)?
-
-  // Get Drupal version - support multiple versions by different .make files.
-  $version_parts = explode('.', VERSION);
-  $version_major = reset($version_parts);
-
-  // Link to URL ideally. Check we can grab it with file_get_contents()?
-  $makefile = dirname(__FILE__) . '/makefiles/fuzion-civicrm-' . $release . '-drupal' . $version_major . '.make';
-  $makeurl = "https://raw.githubusercontent.com/fuzionnz/fuzion-drush/master/makefiles/fuzion-civicrm-{$release}-drupal{$version}.make";
-
-  if (!$make = file_get_contents) {
-    return drush_set_error('DRUSH_FUZION_CIVICRM_NO_MAKEFILE_FOUND', dt('Unable to get makefile: @makeurl', ['@makeurl' => $makeurl]));
-  }
-
-  $verbose = drush_get_context('DRUSH_VERBOSE') ? '-v' : '';
-  // Install CiviCRM using the appropriate make URL.
-  $command = 'drush ' . $verbose . ' -y make --no-core ' . $makeurl;
-  drush_log($command, 'ok');
-  if (!drush_shell_exec($command)) {
-    if (drush_get_context('DRUSH_VERBOSE')) {
-      drush_log('Output of ' . $command . ':', 'error');
-      drush_log(implode("\n", drush_shell_exec_output()), 'warning');
-    }
-    return drush_set_error('DRUSH_FUZION_CIVICRM_INSTALL_PROBLEM', dt('Unable to install Fuzion CiviCRM via !command.', array('!command' => $command)));
-  }
 }
 
 /**
