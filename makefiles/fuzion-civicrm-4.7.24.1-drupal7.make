@@ -4,7 +4,7 @@ core = 7.x
 ; Fetch stock CiviCRM from download.civicrm.org
 projects[civicrm][type] = module
 projects[civicrm][download][type] = get
-projects[civicrm][download][url] = https://download.civicrm.org/civicrm-4.7.24-drupal.tar.gz
+projects[civicrm][download][url] = https://download.civicrm.org/latest/civicrm-RC-drupal.tar.gz
 
 ;; Report a different version to Drupal.
 ;; - Edit / clone https://gist.github.com/xurizaemon/9eb85b7d5d451706cc9fa5a6ee024bf1
