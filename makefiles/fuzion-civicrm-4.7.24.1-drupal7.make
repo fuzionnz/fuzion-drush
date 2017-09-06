@@ -14,11 +14,7 @@ projects[civicrm][patch][version] = https://gist.githubusercontent.com/xurizaemo
 
 ;; Apply patches we want added.
 ; Open PRs
-projects[civicrm][patch][CRM-20636] = https://patch-diff.githubusercontent.com/raw/civicrm/civicrm-core/pull/10412.patch
-projects[civicrm][patch][CRM-20533] = https://patch-diff.githubusercontent.com/raw/civicrm/civicrm-core/pull/10908.patch
-projects[civicrm][patch][CRM-20719] = https://patch-diff.githubusercontent.com/raw/civicrm/civicrm-core/pull/10496.patch
-projects[civicrm][patch][CRM-20728] = https://patch-diff.githubusercontent.com/raw/civicrm/civicrm-core/pull/10501.patch
-; Jitu - this is Fuzion patches, should be in fuzionnz/civicrm-core not civicrm/civicrm-core?
-projects[civicrm][patch][multiple] = https://github.com/civicrm/civicrm-core/commit/e3832b5baea2c33fd9cf7280f1327866c3f4619e.patch
+;; Multiple patches mentioned in https://gist.github.com/jitendrapurohit/5fc7f612188f1e7a22b38c73d9c32e64
+projects[civicrm][patch][multiple] = https://github.com/fuzionnz/civicrm-core/commit/a7ce3096491238e21a6146ca79ee67f6f50a77fd.patch
 
 ;; @TODO How to apply patches to {packages,drupal} better?
