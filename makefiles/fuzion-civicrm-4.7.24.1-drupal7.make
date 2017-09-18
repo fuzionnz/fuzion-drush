@@ -15,6 +15,7 @@ projects[civicrm][patch][version] = https://gist.githubusercontent.com/xurizaemo
 ;; Apply patches we want added.
 ; Open PRs
 ;; Multiple patches mentioned in https://gist.github.com/jitendrapurohit/5fc7f612188f1e7a22b38c73d9c32e64
-projects[civicrm][patch][multiple] = https://github.com/fuzionnz/civicrm-core/commit/a7ce3096491238e21a6146ca79ee67f6f50a77fd.patch
+;; Will be handling this via buildkit.
+;; projects[civicrm][patch][multiple] = https://github.com/fuzionnz/civicrm-core/commit/a7ce3096491238e21a6146ca79ee67f6f50a77fd.patch
 
 ;; @TODO How to apply patches to {packages,drupal} better?
